@@ -8,8 +8,9 @@ from urllib.request import urlopen
 import time
 from selenium.webdriver.common.by import By
 
+driver = webdriver.Chrome("C:/Users/김근영/chromedriver_win32.zip/chromedriver.exe")
 
-driver = webdriver.Chrome(ChromeDriverManager().install())
+#driver = webdriver.Chrome(ChromeDriverManager().install())
 
 
 # 교보문고의 베스트셀러 웹페이지를 가져옵니다.

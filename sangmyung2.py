@@ -1,5 +1,7 @@
 #날짜 검색 버튼
 #searchBtn
+#날짜 입력 부분
+#mainWrap > div.sponge-page-guide > form
 #저자
 #mainWrap > div.sponge-page-guide > div.book-title-page > dl:nth-child(2) > dd > br:nth-child(2)
 
@@ -23,7 +25,7 @@ bsObject = BeautifulSoup(driver.page_source, 'html.parser')
 
 # 책의 상세 웹페이지 주소를 추출하여 리스트에 저장합니다.
 book_page_urls = []
-for item in bsObject.find_all('div', 'prod_info_box'):
+for item in bsObject.find_all('div', 'row'):
     url = item.select('a')[0].get('href') #첫 번째 a태그를 선택해서 href 속성 값을 
     book_page_urls.append(url)
     
@@ -31,10 +33,11 @@ for item in bsObject.find_all('div', 'prod_info_box'):
 for index, book_page_url in enumerate(book_page_urls):
     html = urlopen(book_page_url)
     bsObject = BeautifulSoup(html, "html.parser")
-    title = bsObject.find('span', 'book-title-page').text
+    title = bsObject.find('span', 'prod_title').text
     author = bsObject.find('h3', 'title_heading').a.span.text
-    image = bsObject.find('meta', {'property':'og:image'}).get('content')
-    url = bsObject.find('meta', {'property':'og:url'}).get('content')
-    price = bsObject.find('span', 'prod_info_price').span.text
+    #image = bsObject.find('meta', {'property':'og:image'}).get('content')
+    #url = bsObject.find('meta', {'property':'og:url'}).get('content')
+    #price = bsObject.find('span', 'prod_info_price').span.text
 
-    print(index+1, title, author, image, url, price)
+    print(index+1, title, author)
+    #print(index+1, title, author, image, url, price)
