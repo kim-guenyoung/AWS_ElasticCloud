@@ -21,13 +21,27 @@ driver.find_element(By.CSS_SELECTOR, "#cateTabId2 > a > span").click() #일단�
 time.sleep(2)
 bsObject = BeautifulSoup(driver.page_source, 'html.parser')
 
-#칼럼 리스트 준비
-title = []
-author = []
 
-# 책의 상세 웹페이지 주소를 추출하여 리스트에 저장합니다.
-while(True):
-    book_list = bsObject.find('div', class_ = "rankBestContentList").find('ol').find_all('li')
 
-    for li in book_list:
-        title = li.find('div', class_ = 'listItem singleType').find('div', class_ = "itemName").find('strong').text
+
+
+
+
+
+
+
+
+
+
+
+# #칼럼 리스트 준비
+# title = []
+# author = []
+
+# # 책의 상세 웹페이지 주소를 추출하여 리스트에 저장합니다.
+# while(True):
+#     book_list = bsObject.find('div', class_ = "rankBestContentList").find('ol').find_all('li')
+
+#     for li in book_list:
+#         title = li.find('div', class_ = "listItem singleType").find('div', class_ = "itemName").text
+        
