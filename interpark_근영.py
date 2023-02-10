@@ -19,13 +19,11 @@ driver.find_element(By.CSS_SELECTOR, "#cateTabId2 > a > span").click() #일단�
 time.sleep(1)
 soup = BeautifulSoup(driver.page_source, 'html.parser')
 books = soup.select('div.itemName')
-
+i = 0
 for book in books:
-    rank = book.select('strong')[0].text
-    print(rank)
-
-
-
+    i += 1
+    title = book.select('strong')[0].text
+    print(str(i) + '위', title)
 
 
 
