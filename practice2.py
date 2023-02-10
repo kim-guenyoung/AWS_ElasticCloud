@@ -18,9 +18,10 @@ bsObject = BeautifulSoup(driver.page_source, 'html.parser')
 
 # 책의 상세 웹페이지 주소를 추출하여 리스트에 저장합니다.
 book_page_urls = []
-for item in bsObject.find('dl', 'row').find('dd', 'col-md-8').find_all('a'):
-    url = item.get('a').get('href')
+for item in bsObject.find('dl', 'row').find_all('dd', 'col-md-8'):
+    url = item.select('a')[0].get('href')
     book_page_urls.append(url)
+
 
 # 웹페이지로부터 필요한 정보를 추출합니다. 
 for index, book_page_url in enumerate(book_page_urls):
