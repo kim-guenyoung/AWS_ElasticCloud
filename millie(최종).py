@@ -36,8 +36,6 @@ driver.find_element(By.CSS_SELECTOR, "#wrap > section > section > div.search-bod
 time.sleep(1)
 driver.find_element(By.CSS_SELECTOR, "#wrap > section > div > section > article:nth-child(1) > h2").click()
 time.sleep(1)
-driver.find_element(By.CSS_SELECTOR, "#wrap > section > div > section > article > div > div > button:nth-child(2)").click()
-time.sleep(1)
 
 soup = BeautifulSoup(driver.page_source, 'html.parser')
 
@@ -64,8 +62,7 @@ for i in range(1, 101):#1위부터 100위까지
     time.sleep(1)
     driver.find_element(By.CSS_SELECTOR, "#wrap > section > div > section > article:nth-child(1) > h2").click()
     time.sleep(1)
-    driver.find_element(By.CSS_SELECTOR, "#wrap > section > div > section > article > div > div > button:nth-child(2)").click()
-    time.sleep(1)
+    
 
     
 df = pd.DataFrame(book_list, columns = ["순위", "제목", "저자", "대여 횟수"])

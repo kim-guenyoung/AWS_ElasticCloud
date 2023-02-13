@@ -43,37 +43,52 @@ time.sleep(1)
 driver.find_element(By.CSS_SELECTOR, "#wrap > section > div > section > article > div > div > button:nth-child(2)").click()
 time.sleep(1)
 
+
+def navigate_to_best_seller(driver):
+    driver.find_element(By.CSS_SELECTOR, "#wrap > div > div > header > nav > ul > li:nth-child(3) > a").click()
+    time.sleep(1)
+    driver.find_element(By.CSS_SELECTOR, "#wrap > section > section > div.search-body > section.shortcuts > div > a.best-link.gtm-search-direct-best").click()
+    time.sleep(1)
+    driver.find_element(By.CSS_SELECTOR, "#wrap > section > div > section > article:nth-child(1) > h2").click()
+    time.sleep(1)
+    driver.find_element(By.CSS_SELECTOR, "#wrap > section > div > section > article > div > div > button:nth-child(2)").click()
+    time.sleep(1)
+
+soup = BeautifulSoup(driver.page_source, 'html.parser')
+books = soup.select('div.read-together')
+
 # 1위 책 클릭(대여 횟수 긁어오기 위함)
 driver.find_element(By.CSS_SELECTOR, "#wrap > section > div > section > article > ul > li:nth-child(1) > div").click()
 time.sleep(1)
+borrow_list = [book.select('strong')[0].text for book in books]
 
 
-soup = BeautifulSoup(driver.page_source, 'html.parser')
+# driver.find_element(By.CSS_SELECTOR, "#wrap > section > div > section > article > ul > li:nth-child(2) > div").click()
+# time.sleep(1)
+# borrow_list = [book.select('strong')[0].text for book in books]
 
-books = soup.select('div.read-together')
+# driver.find_element(By.CSS_SELECTOR, "#wrap > section > div > section > article > ul > li:nth-child(2) > div").click()
+# time.sleep(1)
+print(books)
 
 
-i = 1
-for book in books:
+#ln 59 ~ 73 -> 1위부터 100위까지 접속 후 나감(1위 페이지 방문-> 뒤로 가기 -> 2위 페이지 방문-> 뒤로 가기 -> .... 100위 페이지 방문) 
+# for i in range(1, 5):
+#     i +=1
+#     # borrow_list = [book.select('strong')[0].text for book in books]
+#     driver.find_element(By.CSS_SELECTOR, "#wrap > div > div > header > nav > ul > li:nth-child(3) > a").click() #검색탭
+#     time.sleep(1)
+#     driver.find_element(By.CSS_SELECTOR, "#wrap > section > section > div.search-body > section.shortcuts > div > a.best-link.gtm-search-direct-best").click() #베스트셀러 누르고
+#     time.sleep(1)
+#     driver.find_element(By.CSS_SELECTOR, "#wrap > section > div > section > article:nth-child(1) > h2").click() # > 전체 클릭
+#     # driver.find_element(By.XPATH, "//*[@id=\'wrap\']/section/div/section/article[1]/h2").send_keys(Keys.ENTER)
+#     time.sleep(1)
+#     driver.find_element(By.CSS_SELECTOR, "#wrap > section > div > section > article > div > div > button:nth-child(2)").click() # 주간
+#     time.sleep(1)
+#     driver.find_element(By.CSS_SELECTOR, "#wrap > section > div > section > article > ul > li:nth-child("+str(i)+") > div").click()
+#     time.sleep(1)
     
-    driver.find_element(By.CSS_SELECTOR, "#wrap > div > div > header > nav > ul > li:nth-child(3) > a").click() #검색탭
-    time.sleep(1)
-    driver.find_element(By.CSS_SELECTOR, "#wrap > section > section > div.search-body > section.shortcuts > div > a.best-link.gtm-search-direct-best").click() #베스트셀러 누르고
-    time.sleep(1)
-    driver.find_element(By.CSS_SELECTOR, "#wrap > section > div > section > article:nth-child(1) > h2").click() # > 전체 클릭
-    time.sleep(1)
-    driver.find_element(By.CSS_SELECTOR, "#wrap > section > div > section > article > div > div > button:nth-child(2)").click() # 주간
-    time.sleep(1)
-
-    driver.find_element(By.CSS_SELECTOR, "#wrap > section > div > section > article > ul > li:nth-child("+str(i)+") > div").click()
-    time.sleep(1)
-    i += 1
-    borrow_num = book.select('strong')[0].text
-    print(borrow_num)
-    borrow_list.append([borrow_num])
-    if(i > 5):
-        break
     
 df = pd.DataFrame(borrow_list, columns = ["대여 횟수"])
 
-df.to_csv("밀리의 서재 대여 횟수" + '.csv', index = False, encoding = 'utf-8-sig')
+df.to_csv("밀리의 서재 대여 횟수" + '.csv', index = False, encoding = "utf-8-sig")

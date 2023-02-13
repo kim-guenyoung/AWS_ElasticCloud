@@ -54,5 +54,6 @@ for book in books:
 df = pd.DataFrame(book_list, columns = ["순위", "제목", "저자"])
 
 
+
 df.to_csv("밀리의 서재 " + '.csv', index = False, encoding = "utf-8-sig")
 df.to_excel("밀리의 서재" + '.xls', index = False, encoding = "utf-8-sig")
