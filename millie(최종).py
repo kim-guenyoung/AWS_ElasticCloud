@@ -53,7 +53,7 @@ for i in range(1, 101):#1위부터 100위까지
         title = book.select('p.book-name')[0].text
         author = book.select('p.author')[0].text
         borrow_num = book.select('strong')[0].text
-        print(i, title, author, borrow_num)
+        #print(i, title, author, borrow_num)
         book_list.append([i, title, author, borrow_num])
     i += 1
     driver.find_element(By.CSS_SELECTOR, "#wrap > div > div > header > nav > ul > li:nth-child(3) > a").click()
@@ -70,3 +70,5 @@ df = pd.DataFrame(book_list, columns = ["순위", "제목", "저자", "대여 �
 
 df.to_csv("밀리의 서재 대여 횟수" + '.csv', index = False, encoding = 'utf-8-sig')
 df.to_excel("밀리의 서재 대여 횟수" + '.xls', index = False, encoding = "utf-8-sig")
+
+print(df)
