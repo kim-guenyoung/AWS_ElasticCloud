@@ -1,5 +1,4 @@
-#라이트 노벨
-#대학교재/전문서적		
+#소설/시/희곡
 
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
@@ -23,7 +22,7 @@ rank = 0
 
 for i in range(1, 3):
     
-    driver.get("https://www.aladin.co.kr/shop/common/wbest.aspx?BestType=EBookBestseller&BranchType=9&CID=56548&page="+str(i)+"&cnt=300&SortOrder=1")
+    driver.get("https://www.aladin.co.kr/shop/common/wbest.aspx?BestType=EBookBestseller&BranchType=9&CID=38396&page="+str(i)+"&cnt=300&SortOrder=1")
     time.sleep(0.5)
     
     soup = BeautifulSoup(driver.page_source, 'html.parser')
@@ -92,7 +91,7 @@ for i in range(1, 3):
 df = pd.DataFrame(book_list, columns = ["순위", "제목", "저자", "출판사", "출간일", "별점"])
 
 
-df.to_csv("알라딘_라이트노벨" + '.csv', index = False, encoding = 'utf-8-sig')
-# # df.to_excel("알라딘_라이트노벨" + '.xls', index = False, encoding = "utf-8-sig")
+df.to_csv("알라딘_소설, 시, 희곡" + '.csv', index = False, encoding = 'utf-8-sig')
+# # df.to_excel("알라딘_소설, 시, 희곡" + '.xls', index = False, encoding = "utf-8-sig")
 
 print(df)
