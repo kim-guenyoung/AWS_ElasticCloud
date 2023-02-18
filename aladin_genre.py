@@ -1,4 +1,3 @@
-
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 from webdriver_manager.chrome import ChromeDriverManager
@@ -50,16 +49,18 @@ genre_dict = {
     30 : "컴퓨터/모바일"
 }
 
+df = pd.DataFrame(book_list, columns = ["순위", "제목", "저자", "출판사", "출간일", "별점", "장르"])
 
 driver.get("https://www.aladin.co.kr/shop/common/wbest.aspx?BestType=EBookBestseller&BranchType=9&CID=38409")
-for genre_num in range(3, 31):
-    # soup_g = BeautifulSoup(driver.page_source, 'html.parser')
-    # genres = soup_g.select('div.best_left_ul')
-    if(KeyError):
-        genre_num += 1
-
+for genre_num in range(3, 30):
+    
     if(genre_num == 3):
         genre_id = 38409
+        
+    if(genre_num == 22 or genre_num == 25 or genre_num == 28):
+        genre_num += 1
+        continue
+
     elif(genre_num == 4):
         genre_id = 56388
     elif(genre_num == 5):
@@ -112,15 +113,12 @@ for genre_num in range(3, 31):
         genre_id = 38420
     elif(genre_num == 29):
         genre_id = 38407
-    elif(genre_num == 30):
-        genre_id == 38401
-    elif(genre_num >= 31):
-        break
+        
+    genre_num += 1
     time.sleep(1)
 
-    genre_num += 1
+
     for i in range(1, 3):
-    
         driver.get("https://www.aladin.co.kr/shop/common/wbest.aspx?BestType=EBookBestseller&BranchType=9&CID="+str(genre_id)+"&page="+str(i)+"&cnt=300&SortOrder=1")
         time.sleep(0.5)
         
@@ -152,7 +150,7 @@ for genre_num in range(3, 31):
         
         for book in books:
             rank += 1
-            try:
+            try: #일반적인 경우
                 title = book.select('a.bo3')[0].text
 
                 
@@ -163,50 +161,122 @@ for genre_num in range(3, 31):
                 author=info.split('|')[0]
                 publisher=info.split('|')[1]
                 date=info.split('|')[2] 
-
+                
+                genre = genre_dict[genre_num - 1]
+                
                 star = get_star(book)
                 
-                if(genre_num == 22 or genre_num == 25 or genre_num == 28):
-                    genre = genre_dict[genre_num + 1]
-                else:
+                i += 1
+                
+
+            except IndexError: #행사 상품
+                title = book.select('a.bo3')[0].text
+
+                
+                star = get_star(book)
+                try: #only 행사 상품
+                    li_tags = book.find_all('li')
+                    third_li_tag = li_tags[3] # 2. 두 번째 li 태그 선택
+                    info = third_li_tag.get_text() # 3. 두 번째 li 태그 내부의 첫 번째 내용 가져오기
+
+                    author=info.split('|')[0]
+                    publisher=info.split('|')[1]
+                    date=info.split('|')[2]
+                    genre = genre_dict[genre_num - 1]
+                
+
+                except IndexError: #행사 상품은 아닌데, 출판사가 없음.
+                    second_li_tag = li_tags[2]
+                    info = second_li_tag.get_text()
+                    author=info.split('|')[0]
+                    publisher=None
+                    date=info.split('|')[1] 
                     genre = genre_dict[genre_num - 1]
 
-                print(rank, title, author, publisher, date, star, genre)
-                book_list.append([rank, title, author, publisher, date, star, genre])
-                i += 1
-                 
-            
-            except IndexError:
+            book_list.append([rank, title, author, publisher, date, star, genre])
+            i += 1
+for i in range(1, 3):
+        driver.get("https://www.aladin.co.kr/shop/common/wbest.aspx?BestType=EBookBestseller&BranchType=9&CID=38401&page="+str(i)+"&cnt=300&SortOrder=1")
+        time.sleep(0.5)
+        
+        soup = BeautifulSoup(driver.page_source, 'html.parser')
+
+        # 1위 책 클릭(대여 횟수 긁어오기 위함)
+
+        books = soup.select('div.ss_book_box')
+        def get_star(book):
+            stars = book.select_one("div.ss_book_list img")
+            if stars is None:
+                return 0
+            elif stars['src'] == "//image.aladin.co.kr/img/common/star_s10.gif":
+                return 5
+            elif stars['src'] == "//image.aladin.co.kr/img/common/star_s9.gif":
+                return 4.5
+            elif stars['src'] == "//image.aladin.co.kr/img/common/star_s8.gif":
+                return 4
+            elif stars['src'] == "//image.aladin.co.kr/img/common/star_s7.gif":
+                return 3.5
+            elif stars['src'] == "//image.aladin.co.kr/img/common/star_s6.gif":
+                return 3
+            elif stars['src'] == "//image.aladin.co.kr/img/common/star_s5.gif":
+                return 2.5
+            elif stars['src'] == "//image.aladin.co.kr/img/common/star_s4.gif":
+                return 2
+            else:
+                return 0
+        
+        for book in books:
+            rank += 1
+            try: #일반적인 경우
                 title = book.select('a.bo3')[0].text
-            
-                li_tags = book.find_all('li')
-                third_li_tag = li_tags[3] # 2. 세 번째 li 태그 선택
-                info = third_li_tag.get_text() # 3. 세 번째 li 태그 내부의 첫 번째 내용 가져오기
-                if(NameError):
-                    continue
-                author = info.split('|')[0]
-                publisher = info.split('|')[1]
-                date = info.split('|')[2]
+
                 
+                li_tags = book.find_all('li')
+                second_li_tag = li_tags[2] # 2. 두 번째 li 태그 선택
+                info = second_li_tag.get_text() # 3. 두 번째 li 태그 내부의 첫 번째 내용 가져오기
 
+                author=info.split('|')[0]
+                publisher=info.split('|')[1]
+                date=info.split('|')[2] 
+                
+                genre = genre_dict[genre_num]
+                
                 star = get_star(book)
-
-
-                if(genre_num == 22 or genre_num == 25 or genre_num == 28):
-                    genre = genre_dict[genre_num + 1]
-                else:
-                    genre = genre_dict[genre_num - 1]            
-                print(rank, title, author, publisher, date, star, genre)
-                book_list.append([rank, title, author, publisher, date, star, genre])
                 
                 i += 1
                 
+
+            except IndexError: #행사 상품
+                title = book.select('a.bo3')[0].text
+
+                
+                star = get_star(book)
+                try: #only 행사 상품
+                    li_tags = book.find_all('li')
+                    third_li_tag = li_tags[3] # 2. 두 번째 li 태그 선택
+                    info = third_li_tag.get_text() # 3. 두 번째 li 태그 내부의 첫 번째 내용 가져오기
+
+                    author=info.split('|')[0]
+                    publisher=info.split('|')[1]
+                    date=info.split('|')[2]
+                    genre = genre_dict[genre_num]
+                
+
+                except IndexError: #행사 상품은 아닌데, 출판사가 없음.
+                    second_li_tag = li_tags[2]
+                    info = second_li_tag.get_text()
+                    author=info.split('|')[0]
+                    publisher=None
+                    date=info.split('|')[1] 
+                    genre = genre_dict[genre_num]
+
+            book_list.append([rank, title, author, publisher, date, star, genre])
+            i += 1
+
 
                 
 df = pd.DataFrame(book_list, columns = ["순위", "제목", "저자", "출판사", "출간일", "별점", "장르"])
 
 
 df.to_csv("알라딘_장르top100" + '.csv', index = False, encoding = 'utf-8-sig')
-# # df.to_excel("알라딘_고전" + '.xls', index = False, encoding = "utf-8-sig")
-
 print(df)
