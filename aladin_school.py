@@ -36,7 +36,7 @@ genre_dict = {
     3 : "가정/생활", #요리/살림
     4 : "가정/생활", #건강/취미
     5 : "경제/비즈니스", #경제/경영
-    6 : "문학", #고전
+#    6 : "문학", #고전
     7 : "자연/과학", #과학, 사회과
     8 : "강의지원도서", #대학교재/전문서적
 #    9 : "라이트 노벨",
@@ -53,7 +53,7 @@ genre_dict = {
 #    20 : "유아",
     21 : "인문", #인문학
 #    22 : "인물/평전",
-    23 : "자기계발",
+    23 : "에세이/산문",
 #    24 : "잡지",
 #    25 : "전집/중고전집",
 #    26 : "종교/역학",
@@ -71,7 +71,7 @@ for genre_num in range(3, 30):
     if(genre_num == 3):
         genre_id = 38409
         
-    if(genre_num == 9 or genre_num == 11 or genre_num == 13 or genre_num == 14 or genre_num == 16 or genre_num == 17
+    if(genre_num == 6 or genre_num == 9 or genre_num == 11 or genre_num == 13 or genre_num == 14 or genre_num == 16 or genre_num == 17
        or genre_num == 20 or genre_num == 22 or genre_num == 24 or genre_num == 25 or genre_num == 26 or genre_num == 28
        or genre_num == 29):
         genre_num += 1
