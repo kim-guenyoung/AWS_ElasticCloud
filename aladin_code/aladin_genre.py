@@ -15,7 +15,6 @@ driver = webdriver.Chrome("C:/Users/김근영/chromedriver_win32.zip/chromedrive
 
 # 칼럼 리스트 준비
 book_list = []
-rank = 0
 
 
 genre_dict = { 
@@ -149,11 +148,10 @@ for genre_num in range(3, 30):
                 return 0
         
         for book in books:
-            rank += 1
             try: #일반적인 경우
                 title = book.select('a.bo3')[0].text
 
-                
+                rank = book.select("td")[0].text
                 li_tags = book.find_all('li')
                 second_li_tag = li_tags[2] # 2. 두 번째 li 태그 선택
                 info = second_li_tag.get_text() # 3. 두 번째 li 태그 내부의 첫 번째 내용 가져오기
@@ -161,7 +159,7 @@ for genre_num in range(3, 30):
                 author=info.split('|')[0]
                 publisher=info.split('|')[1]
                 date=info.split('|')[2] 
-                
+                price = soup.find('span', {'class': 'ss_p2'}).b.find('span').text
                 genre = genre_dict[genre_num - 1]
                 
                 star = get_star(book)
@@ -171,8 +169,8 @@ for genre_num in range(3, 30):
 
             except IndexError: #행사 상품
                 title = book.select('a.bo3')[0].text
-
-                
+                rank = book.select("td")[0].text
+                price = soup.find('span', {'class': 'ss_p2'}).b.find('span').text
                 star = get_star(book)
                 try: #only 행사 상품
                     li_tags = book.find_all('li')
@@ -226,11 +224,10 @@ for i in range(1, 3):
             return 0
     
     for book in books:
-        rank += 1
         try: #일반적인 경우
             title = book.select('a.bo3')[0].text
-
-            
+            price = soup.find('span', {'class': 'ss_p2'}).b.find('span').text
+            rank = book.select("td")[0].text
             li_tags = book.find_all('li')
             second_li_tag = li_tags[2] # 2. 두 번째 li 태그 선택
             info = second_li_tag.get_text() # 3. 두 번째 li 태그 내부의 첫 번째 내용 가져오기
@@ -248,8 +245,8 @@ for i in range(1, 3):
 
         except IndexError: #행사 상품
             title = book.select('a.bo3')[0].text
-
-            
+            rank = book.select("td")[0].text
+            price = soup.find('span', {'class': 'ss_p2'}).b.find('span').text
             star = get_star(book)
             try: #only 행사 상품
                 li_tags = book.find_all('li')
@@ -269,13 +266,13 @@ for i in range(1, 3):
                 publisher=None
                 date=info.split('|')[1] 
                 genre = genre_dict[genre_num]
-
-        book_list.append([rank, title, author, publisher, date, star, genre])
+               
+        book_list.append([rank, title, author, publisher, date, star, genre, price])
         i += 1
 
 
                 
-df = pd.DataFrame(book_list, columns = ["순위", "제목", "저자", "출판사", "출간일", "별점", "장르"])
+df = pd.DataFrame(book_list, columns = ["순위", "제목", "저자", "출판사", "출간일", "별점", "장르", "가격"])
 
 
 df.to_csv("알라딘_장르top100" + '.csv', index = False, encoding = 'utf-8-sig')

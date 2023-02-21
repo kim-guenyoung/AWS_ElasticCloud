@@ -43,6 +43,9 @@ for i in range(1, 3):
             publisher=info.split('|')[1]
             date=info.split('|')[2] 
 
+            
+            price = soup.find('span', {'class': 'ss_p2'}).b.find('span').text
+            
 
             stars=book.select_one("div.ss_book_list img")
         
@@ -80,18 +83,18 @@ for i in range(1, 3):
                 
                 star=2
 
-            print(rank, title, author, publisher, date, star)
-            book_list.append([rank, title, author, publisher, date, star])
+            print(rank, title, author, publisher, date, star, price)
+            book_list.append([rank, title, author, publisher, date, star, price])
             i += 1
         
         except IndexError:
             pass
                 
             
-df = pd.DataFrame(book_list, columns = ["순위", "제목", "저자", "출판사", "출간일", "별점"])
+#df = pd.DataFrame(book_list, columns = ["순위", "제목", "저자", "출판사", "출간일", "별점", "가격"])
 
 
-df.to_csv("알라딘_수험서, 자격" + '.csv', index = False, encoding = 'utf-8-sig')
+#df.to_csv("알라딘_수험서, 자격" + '.csv', index = False, encoding = 'utf-8-sig')
 # # df.to_excel("알라딘_수험서, 자격" + '.xls', index = False, encoding = "utf-8-sig")
 
-print(df)
+#print(df)
