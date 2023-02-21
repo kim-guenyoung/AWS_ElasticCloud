@@ -1,33 +1,23 @@
-# 알라딘 & 학술정보관 열처럼 ㄱㄱ
-# 학교
-
-# 문학 : 고전, 소설/시/희곡
-# 에세이/산문 : 에세이, 자기계발
-# 인문 : 인문학
-# 경제/비즈니스 : 경제/경영
-# 자연/과학 : 과학, 사회과학
-# 컴퓨터/인터넷 : 컴퓨터/모바일
-# 외국어 : 외국어
-# 문화/예술 : 예술/대중문화
-# 가정/생활 : 요리/살림, 건강/취미
-# 강의지원도서 : 대학교재/전문서적
-# 국외 eBook
-
-
+from elasticsearch import Elasticsearch
+es = Elasticsearch('https://vitaminc.kb.ap-northeast-2.aws.elastic-cloud.com:9243')
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 from webdriver_manager.chrome import ChromeDriverManager
 from bs4 import BeautifulSoup
 import pandas as pd
 from urllib.request import urlopen
+import urllib.request as req
 import time
 from selenium.webdriver.common.by import By
 import requests
 from selenium.webdriver.common.keys import Keys
 from datetime import datetime
-import xlwt
+import json
+from collections import OrderedDict
+import requests
 
 driver = webdriver.Chrome("C:/Users/김근영/chromedriver_win32.zip/chromedriver.exe")
+
 
 # 칼럼 리스트 준비
 book_list = []
@@ -93,17 +83,19 @@ aladin_genre_dict = {
     # 29 : "청소년",
     30 : "컴퓨터/모바일"
 }
-
-df = pd.DataFrame(book_list, columns = ["제목", "저자", "출판사", "출간일", "별점", "장르", "가격"])
+#title = []; author = []; publisher = []; date = []; star = []; genre= []; price= [];
+df = pd.DataFrame(book_list, columns = ["순위", "제목", "알라딘_저자", "알라딘_출판사", "알라딘_출간일", "알라딘_별점", "알라딘_장르", "상명장르", "알라딘_가격"])
+    
+df = pd.DataFrame(book_list, columns = ["순위", "제목", "알라딘_저자", "알라딘_출판사", "알라딘_출간일", "알라딘_별점", "알라딘_장르", "상명장르", "알라딘_가격"])
 driver.get("https://www.aladin.co.kr/shop/common/wbest.aspx?BestType=EBookBestseller&BranchType=9&CID=38409")
-for smu_genre_num in range(27, 30):
+for smu_genre_num in range(3, 30):
     
     if(smu_genre_num == 3):
         smu_genre_id = 38409
         
     if(smu_genre_num == 6 or smu_genre_num == 9 or smu_genre_num == 11 or smu_genre_num == 13 or smu_genre_num == 14 or smu_genre_num == 16 or smu_genre_num == 17
-       or smu_genre_num == 20 or smu_genre_num == 22 or smu_genre_num == 24 or smu_genre_num == 25 or smu_genre_num == 26 or smu_genre_num == 28
-       or smu_genre_num == 29):
+    or smu_genre_num == 20 or smu_genre_num == 22 or smu_genre_num == 24 or smu_genre_num == 25 or smu_genre_num == 26 or smu_genre_num == 28
+    or smu_genre_num == 29):
         smu_genre_num += 1
         continue
 
@@ -166,13 +158,40 @@ for smu_genre_num in range(27, 30):
 
     for i in range(1, 3):
         driver.get("https://www.aladin.co.kr/shop/common/wbest.aspx?BestType=EBookBestseller&BranchType=9&CID="+str(smu_genre_id)+"&page="+str(i)+"&cnt=300&SortOrder=1")
+        
         time.sleep(0.5)
 
         soup = BeautifulSoup(driver.page_source, 'html.parser')
 
         # 1위 책 클릭(대여 횟수 긁어오기 위함)
 
-        books = soup.select('div.ss_book_box')
+        books = soup.select('div.ss_book_box')        
+        li_tags = book.find_all('li')
+        second_li_tag = li_tags[2] # 2. 두 번째 li 태그 선택
+        info = second_li_tag.get_text() # 3. 두 번째 li 태그 내부의 첫 번째 내용 가져오기
+        
+        def get_title(soup):
+            title = soup.select('a.bo3')[0].text
+            return title
+        def get_rank(soup):
+            rank = book.select("td")[0].text
+            return rank
+
+        def get_author(book):
+            author=info.split('|')[0]
+            return author
+
+        def get_publisher(book):
+            
+            publisher = info.split('|')[1]
+            return publisher
+        def get_date(book):
+            date=info.split('|')[2]
+            return date
+
+        def get_price(book):
+            price = soup.find('span', {'class': 'ss_p2'}).b.find('span').text
+            return price
         def get_star(book):
             stars = book.select_one("div.ss_book_list img")
             if stars is None:
@@ -196,27 +215,60 @@ for smu_genre_num in range(27, 30):
         
         for book in books:
             try: #일반적인 경우
-                title = book.select('a.bo3')[0].text
-                rank = book.select("td")[0].text
+                # title = book.select('a.bo3')[0].text
+                # rank = book.select("td")[0].text
                 
-                li_tags = book.find_all('li')
-                second_li_tag = li_tags[2] # 2. 두 번째 li 태그 선택
-                info = second_li_tag.get_text() # 3. 두 번째 li 태그 내부의 첫 번째 내용 가져오기
+                # li_tags = book.find_all('li')
+                # second_li_tag = li_tags[2] # 2. 두 번째 li 태그 선택
+                # info = second_li_tag.get_text() # 3. 두 번째 li 태그 내부의 첫 번째 내용 가져오기
 
-                author=info.split('|')[0]
-                publisher=info.split('|')[1]
-                date=info.split('|')[2] 
+                # author=info.split('|')[0]
+                # publisher=info.split('|')[1]
+                # date=info.split('|')[2] 
                 
-                price = soup.find('span', {'class': 'ss_p2'}).b.find('span').text
+                # price = soup.find('span', {'class': 'ss_p2'}).b.find('span').text
+                def get_title(soup):
+                    titles = soup.select('a.bo3')[0].text
+                    return title
+                def get_rank(book):
+                    ranks = book.select("td")[0].text
+                    return rank
+
+                def get_author(book):
+                    info = book.find('p', {'class': 'mt5'}).text
+                    author = info.split('|')[0].strip()
+                    return author
+
+                def get_publisher(soup):
+                    info = book.find('p', {'class': 'mt5'}).text
+                    publisher = info.split('|')[1].strip()
+                    return publisher
+                
+                def get_date(soup):
+                    info = book.find('p', {'class': 'mt5'}).text
+                    date=info.split('|')[2].strip()
+                    return date
+
+                def get_price(soup):
+                    price = soup.find('span', {'class': 'ss_p2'}).b.find('span').text
+                    return price
+                
                 smu_genre = smu_genre_dict[smu_genre_num - 1]
                 aladin_genre = aladin_genre_dict[smu_genre_num - 1]
-                
+                title = get_title(book)
+                author = get_author(book)
+                publisher = get_publisher(book)
+                date = get_date(book)
                 star = get_star(book)
                 
                 i += 1
                 
 
             except IndexError: #행사 상품
+                li_tags = book.find_all('li')
+                third_li_tag = li_tags[3] # 2. 두 번째 li 태그 선택
+                info = third_li_tag.get_text() # 3. 두 번째 li 태그 내부의 첫 번째 내용 가져오기
+
                 title = book.select('a.bo3')[0].text
                 price = soup.find('span', {'class': 'ss_p2'}).b.find('span').text
                 rank = book.select("td")[0].text
@@ -227,9 +279,31 @@ for smu_genre_num in range(27, 30):
                     third_li_tag = li_tags[3] # 2. 두 번째 li 태그 선택
                     info = third_li_tag.get_text() # 3. 두 번째 li 태그 내부의 첫 번째 내용 가져오기
 
-                    author=info.split('|')[0]
-                    publisher=info.split('|')[1]
-                    date=info.split('|')[2]
+                    # author=info.split('|')[0]
+                    # publisher=info.split('|')[1]
+                    # date=info.split('|')[2]
+
+                    def get_title(book):
+                        title = soup.select('a.bo3')[0].text
+                        return title
+                    def get_rank(book):
+                        rank = book.select("td")[0].text
+                        return rank
+
+                    def get_author(book):
+                        author=info.split('|')[0]
+                        return author
+
+                    def get_publisher(book):
+                        publisher = info.split('|')[1]
+                        return publisher
+                    def get_date(book):
+                        date=info.split('|')[2]
+                        return date
+
+                    def get_price(book):
+                        price = soup.find('span', {'class': 'ss_p2'}).b.find('span').text
+                        return price
                     smu_genre = smu_genre_dict[smu_genre_num - 1]
                     aladin_genre = aladin_genre_dict[smu_genre_num - 1]
                     
@@ -240,14 +314,37 @@ for smu_genre_num in range(27, 30):
                     author=info.split('|')[0]
                     publisher=None
                     date=info.split('|')[1] 
+
+                    def get_title(book):
+                        title = soup.select('a.bo3')[0].text
+                        return title
+
+                    def get_rank(book):
+                        rank = book.select("td")[0].text
+                        return rank
+
+                    def get_author(book):
+                        author=info.split('|')[0]
+                        return author
+
+                    def get_publisher(book):
+                        publisher = info.split('|')[1]
+                        return publisher
+                    def get_date(book):
+                        date=info.split('|')[2]
+                        return date
+
+                    def get_price(book):
+                        price = soup.find('span', {'class': 'ss_p2'}).b.find('span').text
+                        return price
                     smu_genre = smu_genre_dict[smu_genre_num - 1]
                     aladin_genre = aladin_genre_dict[smu_genre_num - 1]
 
-            book_list.append([rank, title, author, publisher, date, star, aladin_genre, smu_genre, price])
+            #book_list.append(jsonObject['cryptoTopSearchRanks'][k][rank, title, author, publisher, date, star, aladin_genre, smu_genre, price])
             i += 1
 
 for i in range(1, 3):
-    driver.get("https://www.aladin.co.kr/shop/common/wbest.aspx?BestType=EBookBestseller&BranchType=9&CID=38401&page="+str(i)+"&cnt=300&SortOrder=1")
+    driver.get("https://www.aladin.co.kr/shop/common/wbest.aspx?BestType=EBookBestseller&BranchType=9&CID="+str(smu_genre_id)+"&page="+str(i)+"&cnt=300&SortOrder=1")
     time.sleep(0.5)
     
     soup = BeautifulSoup(driver.page_source, 'html.parser')
@@ -282,13 +379,34 @@ for i in range(1, 3):
             second_li_tag = li_tags[2] # 2. 두 번째 li 태그 선택
             info = second_li_tag.get_text() # 3. 두 번째 li 태그 내부의 첫 번째 내용 가져오기
 
-            author=info.split('|')[0]
-            publisher=info.split('|')[1]
-            date=info.split('|')[2] 
-            price = soup.find('span', {'class': 'ss_p2'}).b.find('span').text
+            def get_title(book):
+                    titles = soup.select('a.bo3')[0].text
+                    return title
+            def get_rank(book):
+                ranks = book.select("td")[0].text
+                return rank
+
+            def get_author(book):
+                authors=info.split('|')[0]
+                return author
+
+            def get_publisher(book):
+                publishers = info.split('|')[1]
+                return publisher
+            def get_date(book):
+                dates=info.split('|')[2]
+                return date
+
+            def get_price(book):
+                prices = soup.find('span', {'class': 'ss_p2'}).b.find('span').text
+                return price
+            # author=info.split('|')[0]
+            # publisher=info.split('|')[1]
+            # date=info.split('|')[2] 
+            # price = soup.find('span', {'class': 'ss_p2'}).b.find('span').text
             smu_genre = smu_genre_dict[smu_genre_num]            
             star = get_star(book)
-            rank = book.select("td")[0].text
+            #rank = book.select("td")[0].text
                 
             i += 1
             
@@ -323,10 +441,22 @@ for i in range(1, 3):
         i += 1
 
 
-                
+
+dict_test =  {
+    'col1' : rank,
+    'col2' : title,
+    'col3' : author,
+    'col4' : publisher,
+    'col5' : date,
+    'col6' : star,
+    'col7' : aladin_genre,
+    'col8' : smu_genre,
+    'col9' : price
+}
+# df_test = pd.DataFrame(dict_test)
+# print(df_test)
+
 df = pd.DataFrame(book_list, columns = ["순위", "제목", "알라딘_저자", "알라딘_출판사", "알라딘_출간일", "알라딘_별점", "알라딘_장르", "상명장르", "알라딘_가격"])
-
-
 
 df.to_csv("알라딘_장르top100_11개" + '.csv', index = False, encoding = 'utf-8-sig')
 print(df)
