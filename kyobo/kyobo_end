@@ -1,0 +1,145 @@
+#라이브러리 불러오기
+from selenium import webdriver
+from selenium.webdriver.chrome.service import Service
+from webdriver_manager.chrome import ChromeDriverManager
+from bs4 import BeautifulSoup
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.common.action_chains import ActionChains
+import pandas as pd
+from urllib.request import urlopen
+import time
+from selenium.webdriver.common.by import By
+import requests
+from selenium.webdriver.common.keys import Keys
+from datetime import datetime
+import xlwt
+import json
+
+#크롬드라이버로 제어창 띄우기
+driver = webdriver.Chrome(ChromeDriverManager().install())
+driver.get("https://ebook.kyobobook.co.kr/dig/etc/landing/best")
+
+#북리스트 초기화
+book_list = []
+
+#교보문고 장르 
+genre_dict = { 
+        18 : "경제경영", 
+        19 : "자기계발", 
+        20 : "시/에세이", 
+        21 : "인문",
+        22 : "종교", 
+        23 : "소설", 
+        24 : "국어/외국어",
+        25 : "정치/사회", 
+        26 : "역사/문화", 
+        27 : "과학/공학",
+        28 : "IT/프로그래밍",
+        29 : "건강/의학", 
+        30 : "가정/생활/요리",
+        31 : "여행/취미", 
+        32 : "예술/대중문화", 
+        33 : "유아",  
+        34 : "아동", 
+        35 : "청소년", 
+        36 : "교재/수험서",
+        37 : "외국도서", 
+        38 : "매거진" 
+}
+
+#상명대학교 장르
+sm_100_genre_dict = {
+    1 : "문학", 
+    2 : "에세이/산문", 
+    3 : "인문", 
+    4 : "경제/비즈니스", 
+    5 : "자연/과학", 
+    6 : "컴퓨터/인터넷", 
+    7 : "외국어", 
+    8 : "가정/생활", 
+    9 : "강의지원도서", 
+    10 : "국외ebook" 
+}
+
+#100개씩 보기 선택
+driver.find_element(By.ID,"ebookLanding_pageCnt-button").click()
+time.sleep(0.5)
+driver.find_element(By.ID,"ui-id-58").click()
+time.sleep(0.5)
+
+for genre_num in range(18,39):
+    #장르선택
+    driver.find_element(By.ID,"ebookLanding_msc-button").click()
+    time.sleep(0.5)
+    driver.find_element(By.ID,f"ui-id-{genre_num}").click()
+    time.sleep(0.5)
+    
+    #크롤링
+    bsObject = BeautifulSoup(driver.page_source, 'html.parser')
+    
+    books = bsObject.select('div.prodDt')
+    rank = 0 #순위초기화
+    for book in books:
+        
+        rank = rank + 1 #순위
+        
+        title = book.select_one('strong > h3 > a').text  #책 제목
+        
+        author = book.select_one('p.prodDt_info > span').text  #저자
+        
+        publisher = book.select('p.prodDt_info > span')[1].text #출판사
+        
+        date = book.select('p.prodDt_info > span')[2].text  #등록일
+        
+        price =book.select_one('div.prodDt_price span b').text # 가격
+        
+        if(book.select_one('div.prodDt_review > p > b') == None) : #만약 별점이 없으면 0으로
+            review = 0   
+        else :
+            review = book.select_one('div.prodDt_review > p > b').text #별점
+            
+        genre=genre_dict[genre_num]
+        book_list.append([title,rank,author,publisher,date,price,review,genre,genre])
+        
+#데이터 프레임 생성
+df = pd.DataFrame(book_list,columns=["제목","kyobo_순위","kyobo_저자","kyobo_출판사","kyobo_발매일","kyobo_가격","kyobo_평점","kyobo_장르","상명대학교_학술정보관_장르"])
+
+# 장르 상명대에게 맞추기
+df2 = df.replace({'상명대학교_학술정보관_장르' : {'경제경영':'경제/비즈니스','자기계발':'경제/비즈니스','시/에세이':'에세이/산문','소설':'문학','국어/외국어':'외국어','과학/공학':'자연/과학','IT/프로그래밍':'컴퓨터/인터넷','가정/생활/요리':'가정/생활','여행/취미':'가정/생활','예술/대중문화':'가정/생활','교재/수험서':'수험서/자격증','외국도서':'국외ebook'}})
+
+#데이터 전처리
+df2['kyobo_발매일'] = df2['kyobo_발매일'].str.replace('.', '')
+df2['kyobo_발매일'] = df2['kyobo_발매일'].str.slice(0,8)
+df2['kyobo_가격'] = df2['kyobo_가격'].str.replace(',', '')
+df2['kyobo_발매일'] = pd.to_datetime(df2['kyobo_발매일'])
+
+df3 = df2
+
+#엘라스틱서치에 자동으로 
+from elasticsearch import Elasticsearch, helpers
+import configparser
+
+config = configparser.ConfigParser()
+config.read('example.ini')
+
+es = Elasticsearch(
+    cloud_id=config['ELASTIC']['cloud_id'],
+    http_auth=(config['ELASTIC']['user'], config['ELASTIC']['password'])
+)
+
+es.info()
+
+for i in range(len(df3)) :
+     es.index(index='kyobo_best_100_test',
+         document = {
+         "제목" : str(df3.loc[i].제목),
+         "kyobo_순위" : str(df3.loc[i].kyobo_순위),
+         "kyobo_저자": str(df3.loc[i].kyobo_저자),
+         "kyobo_출판사": str(df3.loc[i].kyobo_출판사),
+         "kyobo_발매일": str(df3.loc[i].kyobo_발매일),
+         "kyobo_가격": str(df3.loc[i].kyobo_가격),
+         "kyobo_평점": str(df3.loc[i].kyobo_평점),
+         "kyobo_장르": str(df3.loc[i].kyobo_장르),
+         "상명대학교_학술정보관_장르": str(df3.loc[i].상명대학교_학술정보관_장르)
+ })
