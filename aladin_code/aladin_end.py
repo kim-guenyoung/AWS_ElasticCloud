@@ -331,28 +331,51 @@ for i in range(1, 3):
         
 
 
-                
-df = pd.DataFrame(book_list, columns = ["알라딘_순위", "제목", "알라딘_저자", "알라딘_출판사", "알라딘_출간일", "알라딘_별점", "알라딘_장르", "상명장르", "알라딘_가격"])
-df['알라딘_순위'] = df["알라딘_순위"].str.replace(pat = r'[^A-Za-z0-9가-힣]', repl = r' ', regex = True) #공백(엔터)
+# 데이터 전처리
+df = pd.DataFrame(book_list, columns = ["aladin_순위", "제목", "aladin_저자", "aladin_출판사", "aladin_출간일", "aladin_평점", "aladin_장르", "상명대학교_학술정보관_장르", "aladin_가격"])
+df['aladin_순위'] = df["aladin_순위"].str.replace(pat = r'[^A-Za-z0-9가-힣]', repl = r' ', regex = True) #공백(엔터)
 
-df['알라딘_가격'] = df['알라딘_가격'].str.replace(pat=',', repl = '',regex=True) #, 삭제
-df['알라딘_가격'] = pd.to_numeric(df['알라딘_가격'])
-
-
-df['알라딘_출간일'] = df['알라딘_출간일'].str.replace(pat='년 ', repl = '-',regex=True)#년 -> -
-df['알라딘_출간일'] = df['알라딘_출간일'].str.replace(pat='월', repl = '',regex=True) #월 -> 
-
-df['알라딘_출간일'] = df['알라딘_출간일'].str.strip()
-df['알라딘_출간일'] = pd.to_datetime(df['알라딘_출간일'])
+df['aladin_가격'] = df['aladin_가격'].str.replace(pat=',', repl = '',regex=True) #, 삭제
+df['aladin_가격'] = pd.to_numeric(df['aladin_가격'])
 
 
-df.to_csv("알라딘_장르top100_11개_연습용" + '.csv', index = False, encoding = 'utf-8-sig')
+df['aladin_출간일'] = df['aladin_출간일'].str.replace(pat='년 ', repl = '-',regex=True)#년 -> -
+df['aladin_출간일'] = df['aladin_출간일'].str.replace(pat='월', repl = '',regex=True) #월 -> 
+
+df['aladin_출간일'] = df['aladin_출간일'].str.strip()
+df['aladin_출간일'] = pd.to_datetime(df['aladin_출간일'])
+
+
+# df.to_csv("알라딘_장르top100_11개_연습용" + '.csv', index = False, encoding = 'utf-8-sig')
 
 # df.to_csv("알라딘_장르top100_11개" + '.csv', index = False, encoding = 'utf-8-sig')
-print(df)
-with open('알라딘_장르top100_11개_연습용.csv', 'r', encoding="UTF-8") as csv_file:
-    reader = csv.DictReader(csv_file)
-    data = list(reader)
 
-with open('알라딘_장르top100_11개_연습용.json', 'w', encoding="UTF-8") as json_file:
-    json.dump(알라딘_장르top100_11개_연습용, json_file)
+df2 = df
+
+#엘라스틱서치에 자동으로 
+from elasticsearch import Elasticsearch, helpers
+import configparser
+
+config = configparser.ConfigParser()
+config.read('example.ini')
+
+es = Elasticsearch(
+    cloud_id=config['ELASTIC']['cloud_id'],
+    http_auth=(config['ELASTIC']['user'], config['ELASTIC']['password'])
+)
+
+es.info()
+
+for k in range(len(df2)) :
+     es.index(index='aladin_best_100_test',
+         document = {
+         "제목" : str(df2.loc[k].제목),
+         "aladin_순위" : str(df2.loc[k].aladin_순위),
+         "aladin_저자": str(df2.loc[k].aladin_저자),
+         "aladin_출판사": str(df2.loc[k].aladin_출판사),
+         "aladin_출간일": str(df2.loc[k].aladin_출간일),
+         "aladin_가격": str(df2.loc[k].aladin_가격),
+         "aladin_평점": str(df2.loc[k].aladin_평점),
+         "aladin_장르": str(df2.loc[k].aladin_장르),
+         "상명대학교_학술정보관_장르": str(df2.loc[k].상명대학교_학술정보관_장르)
+ })
