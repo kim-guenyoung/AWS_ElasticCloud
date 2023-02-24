@@ -1,3 +1,19 @@
+# 알라딘 & 학술정보관 열처럼 ㄱㄱ
+# 학교
+
+# 문학 : 고전, 소설/시/희곡
+# 에세이/산문 : 에세이, 자기계발
+# 인문 : 인문학
+# 경제/비즈니스 : 경제/경영
+# 자연/과학 : 과학, 사회과학
+# 컴퓨터/인터넷 : 컴퓨터/모바일
+# 외국어 : 외국어
+# 문화/예술 : 예술/대중문화
+# 가정/생활 : 요리/살림, 건강/취미
+# 강의지원도서 : 대학교재/전문서적
+# 국외 eBook
+
+
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 from webdriver_manager.chrome import ChromeDriverManager
@@ -9,8 +25,50 @@ from selenium.webdriver.common.by import By
 import requests
 from selenium.webdriver.common.keys import Keys
 from datetime import datetime
-import json
 import xlwt
+import json
+import csv
+
+#엘라스틱서치에 자동으로 
+from elasticsearch import Elasticsearch, helpers
+import configparser
+from datetime import datetime, timedelta
+
+present_date = str(datetime.utcnow() + timedelta(hours=9))[:10]
+index = "aladin_best_100_"
+
+config = configparser.ConfigParser()
+config.read('example.ini')
+
+es = Elasticsearch(
+    cloud_id=config['ELASTIC']['cloud_id'],
+    http_auth=(config['ELASTIC']['user'], config['ELASTIC']['password'])
+)
+if (es.indices.exists(index = index + present_date)):
+    pass
+else:
+    # 인덱스 생성
+    index = index + present_date
+    # es.indices.create(index=index + present_date, body= {
+    es.indices.create(index="aladin_best_100_test", body= {
+        # 매핑 ㄱㄱ
+        "mappings": {
+            "properties": {
+                "aladin_순위": {"type": "integer"},
+                "제목": {"type": "text", "analyzer" : "nori", "fields": {"keyword" :{"type" : "keyword"}}},
+                "aladin_저자": {"type": "text", "analyzer" : "nori", "fields": {"keyword" : {"type" : "keyword"}}}, #노리 사용 이유
+                "aladin_출판사": {"type": "keyword"},
+                "aladin_출간일": {"type": "date"},
+                "aladin_가격": {"type": "integer"},
+                "aladin_평점": {"type": "integer"},
+                "aladin_장르": {"type": "keyword"},
+                "상명대학교_학술정보관_장르": {"type": "keyword"},
+                "prsent_date": {"type" : "date"}
+            }
+        }
+    }
+)
+#es.indices.put_mapping(index = "aladin_best_100_test", doc_type = "my_type", body = mapping)
 
 driver = webdriver.Chrome("C:/Users/김근영/chromedriver_win32.zip/chromedriver.exe")
 
@@ -79,8 +137,8 @@ aladin_genre_dict = {
     30 : "컴퓨터/모바일"
 }
 
+#df = pd.DataFrame(book_list, columns = ["제목", "저자", "출판사", "출간일", "별점", "장르", "가격"])
 driver.get("https://www.aladin.co.kr/shop/common/wbest.aspx?BestType=EBookBestseller&BranchType=9&CID=38409")
-llist = []
 for smu_genre_num in range(3, 30):
     
     if(smu_genre_num == 3):
@@ -193,26 +251,9 @@ for smu_genre_num in range(3, 30):
                 date=info.split('|')[2] 
                 
                 price = book.select("span.ss_p2 > b > span")[0].text
-                #price = soup.find('span', {'class': 'ss_p2'}).b.find('span').text
                 smu_genre = smu_genre_dict[smu_genre_num - 1]
                 aladin_genre = aladin_genre_dict[smu_genre_num - 1]
-                    # 도서 정보를 dictionary 형태로 저장
-                book_info = {
-                    "title": title,
-                    "rank": rank,
-                    "author": author,
-                    "publisher": publisher,
-                    "date": date,
-                    "price": price,
-                    "smu_genre": smu_genre,
-                    "aladin_genre": aladin_genre
-                }
                 
-                # 결과 리스트에 추가
-                llist.append(book_info)
-
-            # 결과를 JSON 형식으로 변환하여 출력
-                print(json.dumps(llist))
                 star = get_star(book)
                 
                 i += 1
@@ -220,9 +261,9 @@ for smu_genre_num in range(3, 30):
 
             except IndexError: #행사 상품
                 title = book.select('a.bo3')[0].text
-                # price = soup.find('span', {'class': 'ss_p2'}).b.find('span').text
-                rank = book.select("td")[0].text
                 price = book.select("span.ss_p2 > b > span")[0].text
+                rank = book.select("td")[0].text
+                
                 star = get_star(book)
                 try: #only 행사 상품
                     li_tags = book.find_all('li')
@@ -245,43 +286,139 @@ for smu_genre_num in range(3, 30):
                     smu_genre = smu_genre_dict[smu_genre_num - 1]
                     aladin_genre = aladin_genre_dict[smu_genre_num - 1]
 
-                    book_info = {
-                    "title": title,
-                    "rank": rank,
-                    "author": author,
-                    "publisher": publisher,
-                    "date": date,
-                    "price": price,
-                    "smu_genre": smu_genre,
-                    "aladin_genre": aladin_genre
-                    }
-                
-                    # 결과 리스트에 추가
-                    llist.append(book_info)
-
-               # 결과를 JSON 형식으로 변환하여 출력
-                    print(json.dumps(llist))
-                
-
-            llist.append([rank, title, author, publisher, date, star, aladin_genre, smu_genre, price])
+               
+            book_list.append([rank, title, author, publisher, date, price, star, aladin_genre, smu_genre, present_date])
             i += 1
+            
+            
+for i in range(1, 3):
+    driver.get("https://www.aladin.co.kr/shop/common/wbest.aspx?BestType=EBookBestseller&BranchType=9&CID=38401&page="+str(i)+"&cnt=300&SortOrder=1")
+    time.sleep(0.5)
+    
+    soup = BeautifulSoup(driver.page_source, 'html.parser')
 
-df = pd.DataFrame(book_list, columns = ["알라딘_순위", "제목", "알라딘_저자", "알라딘_출판사", "알라딘_출간일", "알라딘_별점", "알라딘_장르", "상명장르", "알라딘_가격"])
-
-df['알라딘_순위'] = df["알라딘_순위"].str.replace(pat = r'[^A-Za-z0-9가-힣]', repl = r' ', regex = True) #공백(엔터)
-
-df['알라딘_가격'] = df['알라딘_가격'].str.replace(pat=',', repl = '',regex=True) #, 삭제
-df['알라딘_가격'] = pd.to_numeric(df['알라딘_가격'])
 
 
-df['알라딘_출간일'] = df['알라딘_출간일'].str.replace(pat='년 ', repl = '-',regex=True)#년 -> -
-df['알라딘_출간일'] = df['알라딘_출간일'].str.replace(pat='월', repl = '',regex=True) #월 -> 
+    # 1위 책 클릭(대여 횟수 긁어오기 위함)
+    books = soup.select('div.ss_book_box')
+    def get_star(book):
+        stars = book.select_one("div.ss_book_list img")
+        if stars is None:
+            return 0
+        elif stars['src'] == "//image.aladin.co.kr/img/common/star_s10.gif":
+            return 5
+        elif stars['src'] == "//image.aladin.co.kr/img/common/star_s9.gif":
+            return 4.5
+        elif stars['src'] == "//image.aladin.co.kr/img/common/star_s8.gif":
+            return 4
+        elif stars['src'] == "//image.aladin.co.kr/img/common/star_s7.gif":
+            return 3.5
+        elif stars['src'] == "//image.aladin.co.kr/img/common/star_s6.gif":
+            return 3
+        elif stars['src'] == "//image.aladin.co.kr/img/common/star_s5.gif":
+            return 2.5
+        elif stars['src'] == "//image.aladin.co.kr/img/common/star_s4.gif":
+            return 2
+        else:
+            return 0
+    for book in books:
+        try: #일반적인 경우
+            title = book.select('a.bo3')[0].text
 
-df['알라딘_출간일'] = df['알라딘_출간일'].str.strip()
-df['알라딘_출간일'] = pd.to_datetime(df['알라딘_출간일'])
+            li_tags = book.find_all('li')
+            second_li_tag = li_tags[2] # 2. 두 번째 li 태그 선택
+            info = second_li_tag.get_text() # 3. 두 번째 li 태그 내부의 첫 번째 내용 가져오기
 
-# json = df.to_json(orient = 'records',force_ascii=False)
-# print(json)
+            author=info.split('|')[0]
+            publisher=info.split('|')[1]
+            date=info.split('|')[2] 
+            price = book.select("span.ss_p2 > b > span")[0].text
+            smu_genre = smu_genre_dict[smu_genre_num]            
+            star = get_star(book)
+            rank = book.select("td")[0].text
+                
+            i += 1
+            
 
-df.to_csv("알라딘_장르top100_11개_연습용" + '.csv', index = False, encoding = 'utf-8-sig')
-print(df)
+        except IndexError: #행사 상품
+            title = book.select('a.bo3')[0].text
+            price = book.select("span.ss_p2 > b > span")[0].text
+            rank = book.select("td")[0].text
+                
+            star = get_star(book)
+            try: #only 행사 상품
+                li_tags = book.find_all('li')
+                third_li_tag = li_tags[3] # 2. 두 번째 li 태그 선택
+                info = third_li_tag.get_text() # 3. 두 번째 li 태그 내부의 첫 번째 내용 가져오기
+
+                author=info.split('|')[0]
+                publisher=info.split('|')[1]
+                date=info.split('|')[2]
+                smu_genre = smu_genre_dict[smu_genre_num]
+                aladin_genre = aladin_genre_dict[smu_genre_num]
+            
+            except IndexError: #행사 상품은 아닌데, 출판사가 없음.
+                second_li_tag = li_tags[2]
+                info = second_li_tag.get_text()
+                author=info.split('|')[0]
+                publisher=None
+                date=info.split('|')[1] 
+                smu_genre = smu_genre_dict[smu_genre_num]
+                aladin_genre = aladin_genre_dict[smu_genre_num]
+            
+
+        book_list.append([rank, title, author, publisher, date, price, star, aladin_genre, smu_genre, present_date])
+        i += 1
+        
+
+# 데이터 전처리
+
+df = pd.DataFrame(book_list, columns = ["aladin_순위", "제목", "aladin_저자", "aladin_출판사", "aladin_출간일","aladin_가격", "aladin_평점", "aladin_장르", "상명대학교_학술정보관_장르", "현재 날짜"])
+df['aladin_순위'] = df["aladin_순위"].str.replace(pat = r'[^A-Za-z0-9가-힣]', repl = r' ', regex = True) #공백(엔터)
+
+df['aladin_가격'] = df['aladin_가격'].str.replace(pat=',', repl = '',regex=True) #, 삭제
+df['aladin_가격'] = pd.to_numeric(df['aladin_가격'])
+
+
+df['aladin_출간일'] = df['aladin_출간일'].str.replace(pat='년 ', repl = '-',regex=True)#년 -> -
+df['aladin_출간일'] = df['aladin_출간일'].str.replace(pat='월', repl = '',regex=True) #월 -> 
+
+df['aladin_출간일'] = df['aladin_출간일'].str.strip()
+df['aladin_출간일'] = pd.to_datetime(df['aladin_출간일'])
+
+
+# df.to_csv("알라딘_장르top100_11개" + '.csv', index = False, encoding = 'utf-8-sig')
+
+df2 = df
+
+document = {
+         "aladin_순위" : rank,
+         "제목" : title,
+         "aladin_저자": author,
+         "aladin_출판사": publisher,
+         "aladin_출간일": date,
+         "aladin_가격": price,
+         "aladin_평점": star,
+         "aladin_장르": aladin_genre,
+         "상명대학교_학술정보관_장르": smu_genre,
+         "현재 날짜" : present_date
+}
+
+for k in range(len(df2)) :
+     es.index(index='aladin_best_100_test',
+         document = {
+         "aladin_순위" : rank,
+         "제목" : title,
+         "aladin_저자": author,
+         "aladin_출판사": publisher,
+         "aladin_출간일": date,
+         "aladin_가격": price,
+         "aladin_평점": star,
+         "aladin_장르": aladin_genre,
+         "상명대학교_학술정보관_장르": smu_genre,
+         "현재 날짜" : present_date
+ })
+     
+     
+es.index(index = "aladin_best_100_test", body = document)
+df.to_csv("알라딘_장르top100_11개_매핑" + '.csv', index = False, encoding = 'utf-8-sig')
