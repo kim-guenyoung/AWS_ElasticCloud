@@ -29,14 +29,13 @@ while(True):
     # content_list =  soup.find('div',class_='ifr_area basic_ifr').find('div', class_ = 'score_result').find('ul').find_all('li')
     # tmp_text = li.find('div', class_='score_reple').find('p').text
 
-
     #best_seller = soup.find('div', class_ = 'book-title-page').find('dl', class_ = 'row').find_all('dd', class_ = 'col-md-8')
     best_seller = soup.find('div', class_ = 'book-title-page').find_all('dl', class_ = 'row')
     #find_all('dd', class_ = 'col-md-8')
     
     for dl in best_seller:
         #각 요소 가져오기
-        tmp_title = dl.soup.find('dd', class_ = 'col-md-8').find('strong').text
+        tmp_title = dl.soup.find('dd', class_ = 'col-md-8').find_all('strong').text
         #tmp_author = dl.find('dd', class_ = 'col-md-8').find('br').text
         #tmp_score = dl.find('strong').find('a').text
         #title = dl.find('col-md-8').text
